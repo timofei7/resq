@@ -73,7 +73,8 @@ Initializing release ${newVersion}.
 `)
         const newPackageJson = npmPackage.replace(versionRx, `"version": "${newVersion}"`)
         fs.writeFileSync(packageJsonPath, newPackageJson, 'utf-8')
-        commitRelease(version)
+        // commitRelease(version)
+        npm.command.run('build')
     } catch (error) {
         console.log(error.message)
     }
