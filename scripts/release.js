@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 const fs = require('fs')
 const path = require('path')
-const { spawnSync } = require( 'child_process' )
+const { execSync } = require( 'child_process' )
 const prompts = require('prompts')
 
 function getBumpedVersion(number, type) {
@@ -21,14 +21,16 @@ function getBumpedVersion(number, type) {
 }
 
 function commitRelease(version) {
-    spawnSync('git add .')
-    spawnSync(`git commit -m "Release: ${version}"`)
-    gitTag(version)
+    execSync('git add .')
+    execSync(`git commit -m "Release: ${version}"`)
 }
 
-function gitTag(version) {
-    spawnSync(`git tag ${version} -a "Release: ${version}"`)
-    // spawnSync('git push --tags')
+function tagRelease(version) {
+    execSync(`git tag ${version} -a "Release: ${version}"`)
+}
+
+function pushRelease() {
+    execSync('git push --tags')
 }
 
 module.exports = (async function releaseScript() {
@@ -72,9 +74,23 @@ Stopping release.
 Initializing release ${newVersion}.
 `)
         const newPackageJson = npmPackage.replace(versionRx, `"version": "${newVersion}"`)
+        console.log('Generating new package.json file.')
         fs.writeFileSync(packageJsonPath, newPackageJson, 'utf-8')
-        // commitRelease(version)
-        npm.command.run('build')
+
+        console.log('Generating new version file.')
+        fs.writeFileSync(versionPath, newVersion, 'utf-8')
+
+        console.log('Executing build script.')
+        execSync('npm run build')
+
+        console.log('Commiting release.')
+        commitRelease(newVersion)
+
+        console.log('Tagging release.')
+        tagRelease(newVersion)
+
+        console.log('Pushing release.')
+        pushRelease()
     } catch (error) {
         console.log(error.message)
     }
