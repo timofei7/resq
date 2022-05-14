@@ -1,51 +1,51 @@
-import deepEqual from 'fast-deep-equal'
+import deepEqual from 'fast-deep-equal';
 
-const { isArray } = Array
-const { keys } = Object
+const { isArray } = Array;
+const { keys } = Object;
 
 // One liner helper functions
 function isFunction(type) {
-    return typeof type === 'function'
+  return typeof type === 'function';
 }
 
 function isHTMLOrText(node) {
-    return node instanceof HTMLElement || node instanceof Text
+  return node instanceof HTMLElement || node instanceof Text;
 }
 
 function getElementName(type) {
-    return isFunction(type) ? (type.displayName || type.name) : type
+  return isFunction(type) ? type.displayName || type.name : type;
 }
 
 function isFragmentInstance(element) {
-    return (element.children.length > 1)
+  return element.children.length > 1;
 }
 
 function isNativeObject(obj) {
-    return (typeof obj === 'object' && !isArray(obj))
+  return typeof obj === 'object' && !isArray(obj);
 }
 
 function findStateNode(element) {
-    if (isHTMLOrText(element.stateNode)) {
-        return element.stateNode
-    }
+  if (isHTMLOrText(element.stateNode)) {
+    return element.stateNode;
+  }
 
-    if (element.child && isHTMLOrText(element.child.stateNode)) {
-        return element.child.stateNode
-    }
+  if (element.child && isHTMLOrText(element.child.stateNode)) {
+    return element.child.stateNode;
+  }
 
-    return null
+  return null;
 }
 
 export function stripHoCFromName(componentName) {
-    if (componentName) {
-        const splitName = componentName.split('(')
+  if (componentName) {
+    const splitName = componentName.split('(');
 
-        if (splitName.length === 1) {
-            return componentName
-        }
-
-        return splitName.find(e => e.includes(')')).replace(/\)*/g, '')
+    if (splitName.length === 1) {
+      return componentName;
     }
+
+    return splitName.find((e) => e.includes(')')).replace(/\)*/g, '');
+  }
 }
 
 /**
@@ -56,16 +56,16 @@ export function stripHoCFromName(componentName) {
  *              in the node
  */
 function removeChildrenFromProps(props) {
-    // if the props is a string, we can assume that it's just the text inside a html element
-    if (!props || typeof props === 'string') {
-        return props
-    }
+  // if the props is a string, we can assume that it's just the text inside a html element
+  if (!props || typeof props === 'string') {
+    return props;
+  }
 
-    const returnProps = { ...props }
+  const returnProps = { ...props };
 
-    delete returnProps.children
+  delete returnProps.children;
 
-    return returnProps
+  return returnProps;
 }
 
 /**
@@ -76,17 +76,17 @@ function removeChildrenFromProps(props) {
  *              using hooks store them in `memoizedState.baseState`
  */
 function getElementState(elementState) {
-    if (!elementState) {
-        return undefined
-    }
+  if (!elementState) {
+    return undefined;
+  }
 
-    const { baseState } = elementState
+  const { baseState } = elementState;
 
-    if (baseState) {
-        return baseState
-    }
+  if (baseState) {
+    return baseState;
+  }
 
-    return elementState
+  return elementState;
 }
 
 /**
@@ -97,19 +97,19 @@ function getElementState(elementState) {
  * @return {boolean}
  */
 export function verifyIfArraysMatch(arr1, arr2, exact = false) {
-    if (!isArray(arr1) || !isArray(arr2)) {
-        return false
+  if (!isArray(arr1) || !isArray(arr2)) {
+    return false;
+  }
+
+  if (exact) {
+    if (arr1.length !== arr2.length) {
+      return false;
     }
 
-    if (exact) {
-        if (arr1.length !== arr2.length) {
-            return false
-        }
+    return !arr1.find((item) => !arr2.includes(item));
+  }
 
-        return !(arr1.find(item => !arr2.includes(item)))
-    }
-
-    return arr1.some(item => arr2.includes(item))
+  return arr1.some((item) => arr2.includes(item));
 }
 
 /**
@@ -120,33 +120,41 @@ export function verifyIfArraysMatch(arr1, arr2, exact = false) {
  * @return boolean
  */
 export function verifyIfObjectsMatch(matcher = {}, verify = {}, exact = false) {
-    let results = []
+  let results = [];
 
-    if (!keys(matcher).length) {
-        return true
+  if (!keys(matcher).length) {
+    return true;
+  }
+
+  if (verify === null || !keys(verify).length) {
+    return false;
+  }
+
+  if (exact) {
+    return deepEqual(matcher, verify);
+  }
+
+  const matchingKeys = keys(matcher).filter((key) =>
+    keys(verify).includes(key)
+  );
+
+  matchingKeys.forEach((key) => {
+    if (isNativeObject(matcher[key]) && isNativeObject(verify[key])) {
+      results = results.concat(verifyIfObjectsMatch(matcher[key], verify[key]));
     }
 
-    if (verify === null || !keys(verify).length) {
-        return false
+    if (
+      matcher[key] === verify[key] ||
+      verifyIfArraysMatch(matcher[key], verify[key])
+    ) {
+      results.push(verify);
     }
+  });
 
-    if (exact) {
-        return deepEqual(matcher, verify)
-    }
-
-    const matchingKeys = keys(matcher).filter(key => keys(verify).includes(key))
-
-    matchingKeys.forEach((key) => {
-        if (isNativeObject(matcher[key]) && isNativeObject(verify[key])) {
-            results = results.concat(verifyIfObjectsMatch(matcher[key], verify[key]))
-        }
-
-        if (matcher[key] === verify[key] || verifyIfArraysMatch(matcher[key], verify[key])) {
-            results.push(verify)
-        }
-    })
-
-    return results.length > 0 && results.filter(el => el).length === matchingKeys.length
+  return (
+    results.length > 0 &&
+    results.filter((el) => el).length === matchingKeys.length
+  );
 }
 
 /**
@@ -156,7 +164,7 @@ export function verifyIfObjectsMatch(matcher = {}, verify = {}, exact = false) {
  * @description Creates an array of the tree's children HTML nodes
  */
 export function buildFragmentNodeArray(tree) {
-    return tree.children.map(child => child.node).filter(child => !!child)
+  return tree.children.map((child) => child.node).filter((child) => !!child);
 }
 
 /**
@@ -174,51 +182,51 @@ export function buildFragmentNodeArray(tree) {
     }
  */
 export function buildNodeTree(element) {
-    let tree = { children: [] }
+  let tree = { children: [] };
 
-    if (!element) {
-        return tree
+  if (!element) {
+    return tree;
+  }
+
+  tree.name = getElementName(element.type);
+  tree.props = removeChildrenFromProps(element.memoizedProps);
+  tree.state = getElementState(element.memoizedState);
+
+  let { child } = element;
+
+  if (child) {
+    tree.children.push(child);
+
+    while (child.sibling) {
+      tree.children.push(child.sibling);
+      child = child.sibling;
     }
+  }
 
-    tree.name = getElementName(element.type)
-    tree.props = removeChildrenFromProps(element.memoizedProps)
-    tree.state = getElementState(element.memoizedState)
+  tree.children = tree.children.map((child) => buildNodeTree(child));
 
-    let { child } = element
+  if (isFunction(element.type) && isFragmentInstance(tree)) {
+    tree.node = buildFragmentNodeArray(tree);
+    tree.isFragment = true;
+  } else {
+    tree.node = findStateNode(element);
+  }
 
-    if (child) {
-        tree.children.push(child)
-
-        while (child.sibling) {
-            tree.children.push(child.sibling)
-            child = child.sibling
-        }
-    }
-
-    tree.children = tree.children.map(child => buildNodeTree(child))
-
-    if (isFunction(element.type) && isFragmentInstance(tree)) {
-        tree.node = buildFragmentNodeArray(tree)
-        tree.isFragment = true
-    } else {
-        tree.node = findStateNode(element)
-    }
-
-    return tree
+  return tree;
 }
 
 function findNode(children) {
-    while (children.length) {
-        const child = children.shift()
+  while (children.length) {
+    const child = children.shift();
 
-        if (child.node) {
-            return child.node
-        }
-
-        if (child.children && Array.isArray(child.children)) {
-            children.push(...child.children)
-        }
+    if (child.node) {
+      return child.node;
     }
+
+    if (child.children && Array.isArray(child.children)) {
+      children.push(...child.children);
+    }
+  }
 }
 
 /**
@@ -231,27 +239,27 @@ function findNode(children) {
  */
 
 export function findInTree(stack, searchFn) {
-    let returnArray = []
+  let returnArray = [];
 
-    while (stack.length) {
-        const { children } = stack.shift()
+  while (stack.length) {
+    const { children } = stack.shift();
 
-        if (children && Array.isArray(children)) {
-            children.forEach((child) => {
-                if (searchFn(child)) {
-                    if (!child.node && Array.isArray(child.children)) {
-                        child.node = findNode(child.children.concat([]))
-                    }
+    if (children && Array.isArray(children)) {
+      children.forEach((child) => {
+        if (searchFn(child)) {
+          if (!child.node && Array.isArray(child.children)) {
+            child.node = findNode(child.children.concat([]));
+          }
 
-                    returnArray.push(child)
-                }
-
-                stack.push(child)
-            })
+          returnArray.push(child);
         }
-    }
 
-    return returnArray
+        stack.push(child);
+      });
+    }
+  }
+
+  return returnArray;
 }
 
 /**
@@ -262,12 +270,13 @@ export function findInTree(stack, searchFn) {
  * @description Check is node name match to selector
  */
 export function matchSelector(selector, nodeName) {
-    const strippedName = stripHoCFromName(nodeName)
-    const escapeRegex = (nodeName) => nodeName.replace(/([.*+?^=!:${}()|[\]/\\])/g, '\\$1')
+  const strippedName = stripHoCFromName(nodeName);
+  const escapeRegex = (nodeName) =>
+    nodeName.replace(/([.*+?^=!:${}()|[\]/\\])/g, '\\$1');
 
-    return new RegExp('^' + selector.split('*')
-        .map(escapeRegex).join('.+') + '$')
-        .test(strippedName)
+  return new RegExp(
+    '^' + selector.split('*').map(escapeRegex).join('.+') + '$'
+  ).test(strippedName);
 }
 
 /**
@@ -280,22 +289,37 @@ export function matchSelector(selector, nodeName) {
  * @description Base iterator function for the library. Iterates over selectors and searches
  *              node tree
  */
-export function findSelectorInTree(selectors, tree, selectFirst = false, searchFn) {
-    return selectors.reduce((res, selector) => {
-        return res.concat(findInTree(
-            res,
-            searchFn && typeof searchFn === 'function' ? searchFn : (child) => {
+export function findSelectorInTree(
+  selectors,
+  tree,
+  selectFirst = false,
+  searchFn
+) {
+  return selectors.reduce(
+    (res, selector) => {
+      return res.concat(
+        findInTree(
+          res,
+          searchFn && typeof searchFn === 'function'
+            ? searchFn
+            : (child) => {
                 if (typeof child.name === 'string') {
-                    return matchSelector(selector, child.name)
-                } else if (child.name !== null && typeof child.name === 'object') {
-                    return matchSelector(selector, child.name.displayName)
+                  return matchSelector(selector, child.name);
+                } else if (
+                  child.name !== null &&
+                  typeof child.name === 'object'
+                ) {
+                  return matchSelector(selector, child.name.displayName);
                 }
 
-                return false
-            },
-            selectFirst
-        ))
-    }, [tree])
+                return false;
+              },
+          selectFirst
+        )
+      );
+    },
+    [tree]
+  );
 }
 
 /**
@@ -307,17 +331,19 @@ export function findSelectorInTree(selectors, tree, selectFirst = false, searchF
  * @description Filter nodes by deep matching the node[key] to the obj
  */
 export function filterNodesBy(nodes, key, matcher, exact = false) {
-    if (isFunction(matcher)) {
-        // eslint-disable-next-line no-console
-        console.warn('Functions are not supported as filter matchers')
-        return []
-    }
+  if (isFunction(matcher)) {
+    // eslint-disable-next-line no-console
+    console.warn('Functions are not supported as filter matchers');
+    return [];
+  }
 
-    return nodes.filter(node =>
-        (isNativeObject(matcher) && verifyIfObjectsMatch(matcher, node[key], exact)) ||
-        (isArray(matcher) && verifyIfArraysMatch(matcher, node[key], exact)) ||
-        (node[key] === matcher)
-    )
+  return nodes.filter(
+    (node) =>
+      (isNativeObject(matcher) &&
+        verifyIfObjectsMatch(matcher, node[key], exact)) ||
+      (isArray(matcher) && verifyIfArraysMatch(matcher, node[key], exact)) ||
+      node[key] === matcher
+  );
 }
 
 /**
@@ -326,15 +352,18 @@ export function filterNodesBy(nodes, key, matcher, exact = false) {
  * @return {FiberNode}
  */
 export function findReactInstance(element) {
-    if (element.hasOwnProperty('_reactRootContainer')) {
-        return element._reactRootContainer._internalRoot.current
-    }
+  if (element.hasOwnProperty('_reactRootContainer')) {
+    return element._reactRootContainer._internalRoot.current;
+  }
 
-    const instanceId = Object.keys(element).find(
-        key => key.startsWith('__reactInternalInstance') || key.startsWith('__reactFiber')
-    )
+  const instanceId = Object.keys(element).find(
+    (key) =>
+      key.startsWith('__reactInternalInstance') ||
+      key.startsWith('__reactFiber') ||
+      key.startsWith('__reactContainer')
+  );
 
-    if (instanceId) {
-        return element[instanceId]
-    }
+  if (instanceId) {
+    return element[instanceId];
+  }
 }
