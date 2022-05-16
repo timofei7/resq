@@ -60,6 +60,8 @@ function removeChildrenFromProps(props) {
   if (!props || typeof props === 'string') {
     return props;
   }
+  //added https://github.com/cellvia/resq/commit/ed68b8469aa7b408cbf4d84fb66848e4943140e3?diff=unified
+  if (props.children && typeof props.children === 'string') return props;
 
   const returnProps = { ...props };
 
@@ -183,6 +185,13 @@ export function buildFragmentNodeArray(tree) {
  */
 export function buildNodeTree(element) {
   let tree = { children: [] };
+
+  //Sometimes the element has no data, but the alternate is holding valid representation of the vdom
+  if (!(typeof element === 'undefined' || element === null)) {
+    if (element.actualStartTime == -1) {
+      element = element.alternate;
+    }
+  }
 
   if (!element) {
     return tree;
