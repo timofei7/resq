@@ -186,7 +186,6 @@ export function buildFragmentNodeArray(tree) {
 export function buildNodeTree(element) {
   let tree = { children: [] };
 
-  //Sometimes the element has no data, but the alternate is holding valid representation of the vdom
   if (!(typeof element === 'undefined' || element === null)) {
     if (element.actualStartTime == -1) {
       element = element.alternate;
